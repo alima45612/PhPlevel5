@@ -11,6 +11,6 @@
     <nav>
         <a href="index.php">Home</a>
         <a href="register.php">Register</a>
-        <a href="contact.php">Browse Books</a>
+        <a href="browse.php">Browse Books</a>
     </nav>
 </header>
