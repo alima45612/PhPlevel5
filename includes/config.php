@@ -1,0 +1,8 @@
+<?php
+session_start();
+// Error reporting (disable in production)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+?>
+
+
