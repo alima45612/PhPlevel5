@@ -20,3 +20,8 @@ footer{
     padding: 30px;
 }
 
+main .content, header {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
