@@ -14,9 +14,15 @@ try {
     $pdo->exec('SET NAMES "utf8"');
 
 } catch (Exception $e) {
-    echo 'Could not connect to the database.';
-    exit;
+    die( 'Could not connect to the database: ' . $e->getMessage());
 }
+
+/*$conn = new mysqli($host, $user, $pass, $db);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+*/
 ?>
 
 
