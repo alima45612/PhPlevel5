@@ -1,5 +1,29 @@
 <?php include 'includes/config.php'; ?>
 <?php include 'includes/header.php'; ?>
+<?php include 'includes/config.php'; ?>
+
+<?php 
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    //require 'config.php';
+
+    $username = $_POST['username'];
+    $email = $_POST['email'];
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+
+    $sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam("sss", $username, $email, $password);
+
+    if ($stmt->execute()) {
+        echo "<p>Registration successful!</p>";
+    } else {
+        echo "<p>Error: " . $stmt->errorInfo()[2] . "</p>";
+    }
+
+}
+
+
+?>
 
 
 <!DOCTYPE html>
