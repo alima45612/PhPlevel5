@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['review']) && isset($_P
     $book_id = $_POST['book_id'];
     $user_name = htmlspecialchars($_POST['user_name']);
     $review = htmlspecialchars($_POST['review']);
-    $rating = (int)$_POST['rating'];
+    $rating = (int) $_POST['rating'];
 
     if ($rating >= 1 && $rating <= 5) {
         // Insert the review into the database
@@ -56,14 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['review']) && isset($_P
     }
 }
 
-function getReviews($book_id, $conn) {
+function getReviews($book_id, $conn)
+{
     $query = "SELECT * FROM reviews WHERE book_id = :book_id ORDER BY created_at DESC";
     $stmt = $conn->prepare($query);
     $stmt->execute([':book_id' => $book_id]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function getAverageRating($book_id, $conn) {
+function getAverageRating($book_id, $conn)
+{
     $query = "SELECT AVG(rating) AS avg_rating FROM reviews WHERE book_id = :book_id";
     $stmt = $conn->prepare($query);
     $stmt->execute([':book_id' => $book_id]);
@@ -77,25 +79,33 @@ function getAverageRating($book_id, $conn) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Browse Books</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <header>
         <h1>Book Catalogue</h1>
         <form method="GET" action="browse.php">
-            <input type="text" name="search" placeholder="Search books..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
+            <input type="text" name="search" placeholder="Search books..."
+                value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
             <select name="genre">
                 <option value="">Select Genre</option>
-                <option value="Fiction" <?= isset($_GET['genre']) && $_GET['genre'] == 'Fiction' ? 'selected' : '' ?>>Fiction</option>
+                <option value="Fiction" <?= isset($_GET['genre']) && $_GET['genre'] == 'Fiction' ? 'selected' : '' ?>>
+                    Fiction</option>
                 <option value="Non-fiction" <?= isset($_GET['genre']) && $_GET['genre'] == 'Non-fiction' ? 'selected' : '' ?>>Non-fiction</option>
-                <option value="Science" <?= isset($_GET['genre']) && $_GET['genre'] == 'Science' ? 'selected' : '' ?>>Science</option>
-                <option value="Dystopian" <?= isset($_GET['genre']) && $_GET['genre'] == 'Dystopian' ? 'selected' : '' ?>>Dystopian</option>
-                <option value="Fantasy" <?= isset($_GET['genre']) && $_GET['genre'] == 'Fantasy' ? 'selected' : '' ?>>Fantasy</option>
-                <option value="Thriller" <?= isset($_GET['genre']) && $_GET['genre'] == 'Thriller' ? 'selected' : '' ?>>Thriller</option>
+                <option value="Science" <?= isset($_GET['genre']) && $_GET['genre'] == 'Science' ? 'selected' : '' ?>>
+                    Science</option>
+                <option value="Dystopian" <?= isset($_GET['genre']) && $_GET['genre'] == 'Dystopian' ? 'selected' : '' ?>>
+                    Dystopian</option>
+                <option value="Fantasy" <?= isset($_GET['genre']) && $_GET['genre'] == 'Fantasy' ? 'selected' : '' ?>>
+                    Fantasy</option>
+                <option value="Thriller" <?= isset($_GET['genre']) && $_GET['genre'] == 'Thriller' ? 'selected' : '' ?>>
+                    Thriller</option>
             </select>
             <button type="submit">Search</button>
         </form>
@@ -110,6 +120,8 @@ function getAverageRating($book_id, $conn) {
                     <th>Genre</th>
                     <th>Published Year</th>
                     <th>Description</th>
+                    <th>Average Rating</th>
+                    <th>Reviews</th>
                 </tr>
             </thead>
             <tbody>
@@ -121,7 +133,57 @@ function getAverageRating($book_id, $conn) {
                             <td><?= htmlspecialchars($book['genre']) ?></td>
                             <td><?= htmlspecialchars($book['published_year']) ?></td>
                             <td><?= htmlspecialchars($book['description']) ?></td>
+
+                            <!-- NEW: Display Average Rating -->
+                            <td>
+                                <?= getAverageRating($book['id'], $conn) ?> / 5
+                            </td>
+
+                            <!-- NEW: Display Review Form Button and Reviews Section -->
+                            <td>
+                                <!-- Button to Show the Review Form -->
+                                <button
+                                    onclick="document.getElementById('review-form-<?= $book['id'] ?>').style.display='block'">Leave
+                                    a Review</button>
+
+                                <!-- NEW: Review Form (Hidden Initially) -->
+                                <div id="review-form-<?= $book['id'] ?>" style="display:none;">
+                                    <form method="POST" action="browse.php">
+                                        <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
+                                        <input type="text" name="user_name" placeholder="Your Name" required>
+                                        <textarea name="review" placeholder="Write your review" required></textarea>
+                                        <select name="rating" required>
+                                            <option value="">Rate this book</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                        </select>
+                                        <button type="submit">Submit Review</button>
+                                    </form>
+                                </div>
+
+                                <!-- NEW: Display Reviews for Each Book -->
+                                <ul>
+                                    <?php $reviews = getReviews($book['id'], $conn); ?>
+                                    <?php if ($reviews): ?>
+                                        <?php foreach ($reviews as $review): ?>
+                                            <li>
+                                                <strong><?= htmlspecialchars($review['user_name']) ?>:</strong>
+                                                <?= htmlspecialchars($review['review']) ?>
+                                                <br>Rating: <?= $review['rating'] ?>/5
+                                            </li>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <li>No reviews yet.</li>
+                                    <?php endif; ?>
+                                </ul>
+                            </td>
+
                         </tr>
+
+
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
@@ -132,6 +194,7 @@ function getAverageRating($book_id, $conn) {
         </table>
     </main>
 </body>
+
 </html>
 
 
