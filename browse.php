@@ -14,13 +14,13 @@ $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $whereClauses = [];
 $params = [];
 
-if (isset($_GET['search'])) {
+if (isset($_GET['search']) && !empty($_GET['search'])) {
     $search = '%' . $_GET['search'] . '%';
-    $whereClauses[] = "title LIKE :search OR author LIKE :search OR genre LIKE :search";
+    $whereClauses[] = "(title LIKE :search OR author LIKE :search OR genre LIKE :search)";
     $params[':search'] = $search;
 }
 
-if (isset($_GET['genre'])) {
+if (isset($_GET['genre']) && !empty($_GET['genre'])) {
     $genre = $_GET['genre'];
     $whereClauses[] = "genre = :genre";
     $params[':genre'] = $genre;
@@ -36,7 +36,30 @@ $stmt = $conn->prepare($query);
 $stmt->execute($params);
 
 $books = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['review']) && isset($_POST['book_id'])) {
+    $book_id = $_POST['book_id'];
+    $user_name = htmlspecialchars($_POST['user_name']);
+    $review = htmlspecialchars($_POST['review']);
+    $rating = (int)$_POST['rating'];
+
+    if ($rating >= 1 && $rating <= 5) {
+        // Insert the review into the database
+        $insertReviewQuery = "INSERT INTO reviews (book_id, user_name, review, rating) VALUES (:book_id, :user_name, :review, :rating)";
+        $stmt = $conn->prepare($insertReviewQuery);
+        $stmt->execute([
+            ':book_id' => $book_id,
+            ':user_name' => $user_name,
+            ':review' => $review,
+            ':rating' => $rating
+        ]);
+    }
+}
+
 ?>
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
