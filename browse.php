@@ -56,6 +56,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['review']) && isset($_P
     }
 }
 
+function getReviews($book_id, $conn) {
+    $query = "SELECT * FROM reviews WHERE book_id = :book_id ORDER BY created_at DESC";
+    $stmt = $conn->prepare($query);
+    $stmt->execute([':book_id' => $book_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getAverageRating($book_id, $conn) {
+    $query = "SELECT AVG(rating) AS avg_rating FROM reviews WHERE book_id = :book_id";
+    $stmt = $conn->prepare($query);
+    $stmt->execute([':book_id' => $book_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $result['avg_rating'] ? round($result['avg_rating'], 1) : 0;
+}
+
 ?>
 
 
