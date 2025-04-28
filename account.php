@@ -1,10 +1,8 @@
-<?php include 'includes/config.php'; ?>
+<?php include 'includes/config_users.php'; ?>
 <?php include 'includes/header.php'; ?>
 
 <?php
 session_start();
-include 'includes/config.php';
-include 'includes/header.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
