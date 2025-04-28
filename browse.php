@@ -2,13 +2,10 @@
 <?php include 'includes/header.php'; ?>
 
 <?php
-// Database connection
-$host = 'localhost';
-$dbname = 'book_catalogue';
-$username = 'root';
-$password = 'root';
-$conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+$conn = $pdo;
+
+require 'includes/config_users.php';
 
 // Set up query for filtering or searching books
 $whereClauses = [];
@@ -37,23 +34,35 @@ $stmt->execute($params);
 
 $books = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['review']) && isset($_POST['book_id'])) {
-    $book_id = $_POST['book_id'];
-    $user_name = htmlspecialchars($_POST['user_name']);
-    $review = htmlspecialchars($_POST['review']);
-    $rating = (int) $_POST['rating'];
+// Add to basket functionality
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['book_id'])) {
+    session_start();
 
-    if ($rating >= 1 && $rating <= 5) {
-        // Insert the review into the database
-        $insertReviewQuery = "INSERT INTO reviews (book_id, user_name, review, rating) VALUES (:book_id, :user_name, :review, :rating)";
-        $stmt = $conn->prepare($insertReviewQuery);
-        $stmt->execute([
-            ':book_id' => $book_id,
-            ':user_name' => $user_name,
-            ':review' => $review,
-            ':rating' => $rating
-        ]);
+    if (!isset($_SESSION['user_id'])) {
+        header("Location: login.php");
+        exit;
     }
+
+    $user_id = $_SESSION['user_id'];
+    $book_id = $_POST['book_id'];
+
+    // Check if book already in basket
+    $stmt = $pdo_booknest->prepare("SELECT * FROM basket WHERE user_id = ? AND book_id = ?");
+    $stmt->execute([$user_id, $book_id]);
+    $existing = $stmt->fetch();
+
+    if ($existing) {
+        // If book exists in basket, update quantity
+        $stmt = $pdo_booknest->prepare("UPDATE basket SET quantity = quantity + 1 WHERE user_id = ? AND book_id = ?");
+        $stmt->execute([$user_id, $book_id]);
+    } else {
+        // If book doesn't exist in basket, insert it
+        $stmt = $pdo_booknest->prepare("INSERT INTO basket (user_id, book_id, quantity) VALUES (?, ?, 1)");
+        $stmt->execute([$user_id, $book_id]);
+    }
+
+    header("Location: browse.php"); // Redirect back to browse
+    exit;
 }
 
 function getReviews($book_id, $conn)
@@ -72,10 +81,7 @@ function getAverageRating($book_id, $conn)
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     return $result['avg_rating'] ? round($result['avg_rating'], 1) : 0;
 }
-
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -123,6 +129,7 @@ function getAverageRating($book_id, $conn)
                     <th>Price</th>
                     <th>Average Rating</th>
                     <th>Reviews</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -134,21 +141,15 @@ function getAverageRating($book_id, $conn)
                             <td><?= htmlspecialchars($book['genre']) ?></td>
                             <td><?= htmlspecialchars($book['published_year']) ?></td>
                             <td><?= htmlspecialchars($book['description']) ?></td>
-                            <td><?=htmlspecialchars($book['price']) ?></td>
+                            <td>$<?= htmlspecialchars($book['price']) ?></td>
 
-                            <!-- NEW: Display Average Rating -->
+                            <!-- Average Rating -->
+                            <td><?= getAverageRating($book['id'], $conn) ?> / 5</td>
+
+                            <!-- Review Form and Reviews -->
                             <td>
-                                <?= getAverageRating($book['id'], $conn) ?> / 5
-                            </td>
+                                <button onclick="document.getElementById('review-form-<?= $book['id'] ?>').style.display='block'">Leave a Review</button>
 
-                            <!-- NEW: Display Review Form Button and Reviews Section -->
-                            <td>
-                                <!-- Button to Show the Review Form -->
-                                <button
-                                    onclick="document.getElementById('review-form-<?= $book['id'] ?>').style.display='block'">Leave
-                                    a Review</button>
-
-                                <!-- NEW: Review Form (Hidden Initially) -->
                                 <div id="review-form-<?= $book['id'] ?>" style="display:none;">
                                     <form method="POST" action="browse.php">
                                         <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
@@ -166,16 +167,11 @@ function getAverageRating($book_id, $conn)
                                     </form>
                                 </div>
 
-                                <!-- NEW: Display Reviews for Each Book -->
                                 <ul>
                                     <?php $reviews = getReviews($book['id'], $conn); ?>
                                     <?php if ($reviews): ?>
                                         <?php foreach ($reviews as $review): ?>
-                                            <li>
-                                                <strong><?= htmlspecialchars($review['user_name']) ?>:</strong>
-                                                <?= htmlspecialchars($review['review']) ?>
-                                                <br>Rating: <?= $review['rating'] ?>/5
-                                            </li>
+                                            <li><strong><?= htmlspecialchars($review['user_name']) ?>:</strong> <?= htmlspecialchars($review['review']) ?> <br>Rating: <?= $review['rating'] ?>/5</li>
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <li>No reviews yet.</li>
@@ -183,13 +179,23 @@ function getAverageRating($book_id, $conn)
                                 </ul>
                             </td>
 
+                            <!-- Add to Basket Button -->
+                            <td>
+                                <?php if (isset($_SESSION['user_id'])): ?>
+                                    <form method="POST" action="browse.php">
+                                        <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
+                                        <button type="submit">Add to Basket</button>
+                                    </form>
+                                <?php else: ?>
+                                    <p><a href="login.php">Login to add to basket</a></p>
+                                <?php endif; ?>
+                            </td>
+
                         </tr>
-
-
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5">No books found.</td>
+                        <td colspan="9">No books found.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -198,9 +204,5 @@ function getAverageRating($book_id, $conn)
 </body>
 
 </html>
-
-
-
-
 
 <?php include 'includes/footer.php'; ?>
