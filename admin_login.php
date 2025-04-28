@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($username === $admin_user && $password === $admin_pass) {
         $_SESSION['admin_logged_in'] = true;
-        header("Location: admin_add_book.php");
+        header("Location: admin_management.php");
         exit;
     } else {
         $error = "Invalid credentials.";
@@ -28,3 +28,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <label>Password: <input type="password" name="password" required></label><br>
     <button type="submit">Login</button>
 </form>
+
+<?php include 'includes/footer.php'; ?>
