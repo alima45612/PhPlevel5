@@ -1,9 +1,10 @@
 <?php
-session_start();
-// Error reporting (disable in production)
+
+// Error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-$db = 'booklets';
+$db = 'booknest';
+$db = 'book_catalogue';
 $host = 'localhost';
 $user = 'root';
 $pass = 'root';
