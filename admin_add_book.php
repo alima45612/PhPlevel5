@@ -1,4 +1,4 @@
-<?php include 'includes/config.php'; ?>
+
 <?php include 'includes/header.php'; ?>
 
 <?php
@@ -8,6 +8,8 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit;
 }
 include 'includes/config.php';
+
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $title = $_POST['title'];
@@ -41,4 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <button type="submit">Add Book</button>
 </form>
 
+<p><a href="admin_management.php">Back to Admin Dashboard</a></p>
 <p><a href="logout.php">Logout</a></p>
+
+<?php include 'includes/footer.php'; ?>
