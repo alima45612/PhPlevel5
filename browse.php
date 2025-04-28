@@ -120,6 +120,7 @@ function getAverageRating($book_id, $conn)
                     <th>Genre</th>
                     <th>Published Year</th>
                     <th>Description</th>
+                    <th>Price</th>
                     <th>Average Rating</th>
                     <th>Reviews</th>
                 </tr>
@@ -133,6 +134,7 @@ function getAverageRating($book_id, $conn)
                             <td><?= htmlspecialchars($book['genre']) ?></td>
                             <td><?= htmlspecialchars($book['published_year']) ?></td>
                             <td><?= htmlspecialchars($book['description']) ?></td>
+                            <td><?=htmlspecialchars($book['price']) ?></td>
 
                             <!-- NEW: Display Average Rating -->
                             <td>
