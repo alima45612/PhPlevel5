@@ -1,6 +1,6 @@
-<?php include 'includes/config.php'; ?>
+<?php include 'includes/config_users.php'; ?>
 <?php include 'includes/header.php'; ?>
-<?php include 'includes/config.php'; ?>
+
 
 <?php 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -10,16 +10,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    $sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam("sss", $username, $email, $password);
-
-    if ($stmt->execute()) {
-        echo "<p>Registration successful!</p>";
-    } else {
-        echo "<p>Error: " . $stmt->errorInfo()[2] . "</p>";
+    try {
+        $sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute([$username, $email, $password])) {
+            echo "<p>Registration successful!</p>";
+        } else {
+            echo "<p>Error inserting data.</p>";
+        }
+    } catch (PDOException $e) {
+        echo "<p>Error: " . $e->getMessage() . "</p>";
     }
-
 }
 
 
@@ -59,6 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     
     <p>Already have an account? <a href="login.php">Login here</a></p>
+    <p>Admin login <a href="admin_login.php"> Login here</a></p>
 </main>
 
 
